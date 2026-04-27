@@ -556,35 +556,32 @@ function renderNF(i) {
   }).join('');
 }
 
+function buildRows() {
+  const nfCols = ['NF Número','Chave Acesso','Série','Data Emissão','Natureza Op.','Emitente','CNPJ Emitente','Destinatário','CNPJ/CPF Destinatário','Qtd. Itens NF','Vl. Produtos','Desconto','Frete','ICMS','IPI','PIS','COFINS','Total NF'];
+  const itemCols = Object.keys(allNFs[0].itens[0]||{});
+  const allCols = [...nfCols, ...itemCols];
+  const rows = [allCols];
+  allNFs.forEach(nf => {
+    nf.itens.forEach(it => {
+      const nfData = [nf.numero,nf.chave,nf.serie,fmtDate(nf.dhEmi),nf.natOp,nf.emitNome,nf.emitCNPJ,nf.destNome,nf.destDoc,nf.itens.length,nf.vProd,nf.vDesc,nf.vFrete,nf.vICMS,nf.vIPI,nf.vPIS,nf.vCOFINS,nf.vNF];
+      rows.push([...nfData, ...itemCols.map(c => it[c]??'')]);
+    });
+  });
+  return { allCols, rows };
+}
+
 function exportExcel() {
   if (!allNFs.length) return;
   const wb = XLSX.utils.book_new();
-
-  // Aba cabeçalho
-  const cabCols = ['Arquivo','Chave Acesso','Número','Série','Emissão','Natureza Op.','Emitente','CNPJ Emitente','Destinatário','Doc Destinatário','Vl. Produtos','Desconto','Frete','ICMS','IPI','PIS','COFINS','Total NF'];
-  const cabRows = [cabCols, ...allNFs.map(n=>[n.filename,n.chave,n.numero,n.serie,fmtDate(n.dhEmi),n.natOp,n.emitNome,n.emitCNPJ,n.destNome,n.destDoc,n.vProd,n.vDesc,n.vFrete,n.vICMS,n.vIPI,n.vPIS,n.vCOFINS,n.vNF])];
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(cabRows), 'Cabeçalho NFs');
-
-  // Aba itens
-  const itensCols = ['NF Número','Natureza Op.','Emitente','CNPJ Emitente','Destinatário','CNPJ/CPF Destinatário','Data Emissão',...Object.keys(allNFs[0].itens[0]||{})];
-  const itensRows = [itensCols];
-  allNFs.forEach(nf => nf.itens.forEach(it =>
-    itensRows.push([nf.numero,nf.natOp,nf.emitNome,nf.emitCNPJ,nf.destNome,nf.destDoc,fmtDate(nf.dhEmi),...Object.values(it)])
-  ));
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(itensRows), 'Itens');
-
+  const { rows } = buildRows();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Itens NF-e');
   XLSX.writeFile(wb, 'notas_fiscais.xlsx');
 }
 
 function exportCSV() {
   if (!allNFs.length) return;
-  const cols = ['NF Número','Natureza Op.','Emitente','CNPJ Emitente','Destinatário','CNPJ/CPF Destinatário','Data Emissão',...Object.keys(allNFs[0].itens[0]||{})];
-  let csv = cols.join(';') + '\n';
-  allNFs.forEach(nf => nf.itens.forEach(it => {
-    csv += [nf.numero,nf.natOp,nf.emitNome,nf.emitCNPJ,nf.destNome,nf.destDoc,fmtDate(nf.dhEmi),...Object.values(it)]
-      .map(v=>`"${(v??'').toString().replace(/"/g,'""')}"`)
-      .join(';') + '\n';
-  }));
+  const { rows } = buildRows();
+  const csv = rows.map(r => r.map(v=>`"${(v??'').toString().replace(/"/g,'""')}"`).join(';')).join('\n');
   const blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob); a.download='notas_fiscais.csv'; a.click();
