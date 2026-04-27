@@ -557,14 +557,15 @@ function renderNF(i) {
 }
 
 function buildRows() {
-  const nfCols = ['NF Número','Chave Acesso','Série','Data Emissão','Natureza Op.','Emitente','CNPJ Emitente','Destinatário','CNPJ/CPF Destinatário','Qtd. Itens NF','Vl. Produtos','Desconto','Frete','ICMS','IPI','PIS','COFINS','Total NF'];
-  const itemCols = Object.keys(allNFs[0].itens[0]||{});
-  const allCols = [...nfCols, ...itemCols];
+  const nfCols   = ['NF Número','Chave Acesso','Série','Data Emissão','Natureza Op.','Emitente','CNPJ Emitente','Destinatário','CNPJ/CPF Destinatário','Qtd. Itens NF','Vl. Produtos','Vl. Desconto NF','Frete','ICMS','IPI','PIS','COFINS','Total NF'];
+  const itemCols = ['Nº Item','Código','Descrição','NCM','CFOP','Unidade','Quantidade','Vl. Unitário','Vl. Total Item','Desconto Item','CST/CSOSN','Base ICMS','Alíq. ICMS (%)','Vl. ICMS','Vl. IPI','EAN/GTIN'];
+  const allCols  = [...nfCols, ...itemCols];
   const rows = [allCols];
   allNFs.forEach(nf => {
     nf.itens.forEach(it => {
       const nfData = [nf.numero,nf.chave,nf.serie,fmtDate(nf.dhEmi),nf.natOp,nf.emitNome,nf.emitCNPJ,nf.destNome,nf.destDoc,nf.itens.length,nf.vProd,nf.vDesc,nf.vFrete,nf.vICMS,nf.vIPI,nf.vPIS,nf.vCOFINS,nf.vNF];
-      rows.push([...nfData, ...itemCols.map(c => it[c]??'')]);
+      const itData = [it['Nº Item'],it['Código'],it['Descrição'],it['NCM'],it['CFOP'],it['Unidade'],it['Quantidade'],it['Vl. Unitário'],it['Vl. Total Item'],it['Desconto'],it['CST/CSOSN'],it['Base ICMS'],it['Alíq. ICMS (%)'],it['Vl. ICMS'],it['Vl. IPI'],it['EAN/GTIN']];
+      rows.push([...nfData, ...itData]);
     });
   });
   return { allCols, rows };
