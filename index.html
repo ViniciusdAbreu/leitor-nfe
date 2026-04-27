@@ -546,11 +546,14 @@ function renderNF(i) {
     </div>
     ${nf.chave ? `<div class="chave">Chave de acesso: ${nf.chave}</div>` : ''}
   `;
+  const extraCols = ['Natureza Op.','CNPJ Emitente','CNPJ/CPF Destinatário'];
   const cols = Object.keys(nf.itens[0]||{});
-  document.getElementById('itens-header').innerHTML = cols.map(c=>`<th>${c}</th>`).join('');
-  document.getElementById('itens-body').innerHTML = nf.itens.map(row =>
-    '<tr>' + cols.map(c=>`<td>${row[c]??''}</td>`).join('') + '</tr>'
-  ).join('');
+  const allCols = [...extraCols, ...cols];
+  document.getElementById('itens-header').innerHTML = allCols.map(c=>`<th>${c}</th>`).join('');
+  document.getElementById('itens-body').innerHTML = nf.itens.map(row => {
+    const extra = [nf.natOp, nf.emitCNPJ, nf.destDoc];
+    return '<tr>' + [...extra, ...cols.map(c=>row[c]??'')].map(v=>`<td>${v}</td>`).join('') + '</tr>';
+  }).join('');
 }
 
 function exportExcel() {
@@ -563,10 +566,10 @@ function exportExcel() {
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(cabRows), 'Cabeçalho NFs');
 
   // Aba itens
-  const itensCols = ['NF Número','Emitente','Destinatário','Data Emissão',...Object.keys(allNFs[0].itens[0]||{})];
+  const itensCols = ['NF Número','Natureza Op.','Emitente','CNPJ Emitente','Destinatário','CNPJ/CPF Destinatário','Data Emissão',...Object.keys(allNFs[0].itens[0]||{})];
   const itensRows = [itensCols];
   allNFs.forEach(nf => nf.itens.forEach(it =>
-    itensRows.push([nf.numero,nf.emitNome,nf.destNome,fmtDate(nf.dhEmi),...Object.values(it)])
+    itensRows.push([nf.numero,nf.natOp,nf.emitNome,nf.emitCNPJ,nf.destNome,nf.destDoc,fmtDate(nf.dhEmi),...Object.values(it)])
   ));
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(itensRows), 'Itens');
 
@@ -575,10 +578,10 @@ function exportExcel() {
 
 function exportCSV() {
   if (!allNFs.length) return;
-  const cols = ['NF Número','Emitente','Destinatário','Data Emissão',...Object.keys(allNFs[0].itens[0]||{})];
+  const cols = ['NF Número','Natureza Op.','Emitente','CNPJ Emitente','Destinatário','CNPJ/CPF Destinatário','Data Emissão',...Object.keys(allNFs[0].itens[0]||{})];
   let csv = cols.join(';') + '\n';
   allNFs.forEach(nf => nf.itens.forEach(it => {
-    csv += [nf.numero,nf.emitNome,nf.destNome,fmtDate(nf.dhEmi),...Object.values(it)]
+    csv += [nf.numero,nf.natOp,nf.emitNome,nf.emitCNPJ,nf.destNome,nf.destDoc,fmtDate(nf.dhEmi),...Object.values(it)]
       .map(v=>`"${(v??'').toString().replace(/"/g,'""')}"`)
       .join(';') + '\n';
   }));
